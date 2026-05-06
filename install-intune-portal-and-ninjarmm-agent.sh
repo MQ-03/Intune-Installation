@@ -4,7 +4,7 @@
 # Deployment Method : Microsoft Intune (Linux Script Push)
 # =============================================================================
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # --------------------------------------------------------------------------- #
 # Variables
@@ -33,6 +33,18 @@ fail() {
     log "ERROR: $*"
     exit 1
 }
+
+on_error() {
+    local exit_code=$?
+    local line_no=${1:-unknown}
+    local command=${2:-unknown}
+
+    log "ERROR: Command failed with exit code ${exit_code} at line ${line_no}: ${command}"
+    log "ERROR: Review the detailed log with: sudo tail -n 120 ${LOG_FILE}"
+    exit "$exit_code"
+}
+
+trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
 
 package_installed() {
     dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q "install ok installed"
